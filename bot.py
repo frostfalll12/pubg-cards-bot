@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
 GUILD_ID = 837986019420012554
+GUILD_OBJECT = discord.Object(id=GUILD_ID)
 
 SECTIONS = {
     "evolving": {
@@ -101,7 +102,7 @@ SECTIONS = {
 }
 
 if not TOKEN:
-    raise RuntimeError("TOKEN not found. Put TOKEN=your_bot_token in Railway Variables or .env")
+    raise RuntimeError("TOKEN not found. Put TOKEN in Railway Variables or .env")
 
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -234,11 +235,7 @@ def build_collection_embed(member: discord.Member, guild_id: int) -> discord.Emb
             f"🟡 **Duplicates:**\n{dupes_text}"
         )
 
-        embed.add_field(
-            name=f"📦 {data['name']}",
-            value=value[:1024],
-            inline=False,
-        )
+        embed.add_field(name=f"📦 {data['name']}", value=value[:1024], inline=False)
 
     embed.set_footer(text="Use /info to learn how the bot works.")
     return embed
@@ -1000,8 +997,17 @@ class DupeRemoveAmountView(discord.ui.View):
         )
 
 
-missing_group = app_commands.Group(name="missing", description="Manage your missing cards")
-dupes_group = app_commands.Group(name="dupes", description="Manage your duplicate cards")
+missing_group = app_commands.Group(
+    name="missing",
+    description="Manage your missing cards",
+    guild_ids=[GUILD_ID],
+)
+
+dupes_group = app_commands.Group(
+    name="dupes",
+    description="Manage your duplicate cards",
+    guild_ids=[GUILD_ID],
+)
 
 
 @missing_group.command(name="add", description="Add missing cards")
@@ -1066,14 +1072,22 @@ async def dupes_remove(interaction: discord.Interaction):
     )
 
 
-@bot.tree.command(name="collection", description="Show your collection or another user's collection", guild=discord.Object(id=GUILD_ID))
+@bot.tree.command(
+    name="collection",
+    description="Show your collection or another user's collection",
+    guild=GUILD_OBJECT,
+)
 async def collection(interaction: discord.Interaction, user: discord.Member | None = None):
     target = user or interaction.user
     embed = build_collection_embed(target, interaction.guild_id)
     await interaction.response.send_message(embed=embed)
 
 
-@bot.tree.command(name="info", description="Learn how to use the PUBG cards bot", guild=discord.Object(id=GUILD_ID))
+@bot.tree.command(
+    name="info",
+    description="Learn how to use the PUBG cards bot",
+    guild=GUILD_OBJECT,
+)
 async def info(interaction: discord.Interaction):
     embed = discord.Embed(
         title="ℹ️ PUBG Cards Bot Info",
@@ -1131,20 +1145,7 @@ async def info(interaction: discord.Interaction):
 
 @bot.event
 async def on_ready():
-    guild = discord.Object(id=GUILD_ID)
-
-    try:
-        bot.tree.add_command(missing_group, guild=guild)
-    except Exception:
-        pass
-
-    try:
-        bot.tree.add_command(dupes_group, guild=guild)
-    except Exception:
-        pass
-
-    synced = await bot.tree.sync(guild=guild)
-
+    synced = await bot.tree.sync(guild=GUILD_OBJECT)
     print(f"Logged in as {bot.user}")
     print(f"Synced {len(synced)} commands to guild {GUILD_ID}")
 
