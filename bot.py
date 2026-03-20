@@ -1,6 +1,5 @@
 import os
 import sqlite3
-from copy import deepcopy
 
 import discord
 from discord import app_commands
@@ -128,14 +127,6 @@ def normalize(text: str) -> str:
     return " ".join(text.lower().strip().split())
 
 
-def progress_bar(current: int, total: int, length: int = 10) -> str:
-    if total <= 0:
-        return "░" * length
-    filled = int((current / total) * length)
-    filled = max(0, min(length, filled))
-    return "█" * filled + "░" * (length - filled)
-
-
 def get_visible_cards(section_key: str) -> list[str]:
     return SECTIONS[section_key]["cards"]
 
@@ -228,24 +219,25 @@ def build_collection_embed(member: discord.Member, guild_id: int) -> discord.Emb
         released_cards = set(data["cards"])
         missing = set(get_missing_set(guild_id, member.id, section_key))
         dupes = get_dupe_map(guild_id, member.id, section_key)
-        owned = sorted(released_cards - missing)
 
-        owned_count = len(owned)
+        owned_count = len(released_cards - missing)
         total = data["total"]
         percent = int((owned_count / total) * 100) if total else 0
-        bar = progress_bar(owned_count, total)
 
-        owned_text = ", ".join(card.title() for card in owned) if owned else "None"
         missing_text = ", ".join(card.title() for card in sorted(missing)) if missing else "None"
         dupes_text = "\n".join(f"{card.title()} x{amt}" for card, amt in sorted(dupes.items())) if dupes else "None"
 
         value = (
-            f"🟢 **Owned ({owned_count}/{total} | {percent}%)**\n{bar}\n{owned_text}\n\n"
-            f"🔴 **Missing ({len(missing)})**\n{missing_text}\n\n"
-            f"🟡 **Duplicates**\n{dupes_text}"
+            f"🟢 **Owned:** {owned_count}/{total} ({percent}%)\n\n"
+            f"🔴 **Missing ({len(missing)}):**\n{missing_text}\n\n"
+            f"🟡 **Duplicates:**\n{dupes_text}"
         )
 
-        embed.add_field(name=f"📦 {data['name']}", value=value[:1024], inline=False)
+        embed.add_field(
+            name=f"📦 {data['name']}",
+            value=value[:1024],
+            inline=False,
+        )
 
     embed.set_footer(text="Use /info to learn how the bot works.")
     return embed
@@ -337,11 +329,7 @@ class MissingSectionPickerView(discord.ui.View):
                 section_key,
                 self.pending_missing.get(section_key, set()),
             )
-
-        await interaction.response.edit_message(
-            content="✅ Saved all missing-card changes.",
-            view=None,
-        )
+        await interaction.response.edit_message(content="✅ Saved all missing-card changes.", view=None)
 
     @discord.ui.button(label="Cancel", emoji="❌", style=discord.ButtonStyle.red, row=4)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -418,11 +406,7 @@ class MissingSectionEditView(discord.ui.View):
                 section_key,
                 self.pending_missing.get(section_key, set()),
             )
-
-        await interaction.response.edit_message(
-            content="✅ Saved all missing-card changes.",
-            view=None,
-        )
+        await interaction.response.edit_message(content="✅ Saved all missing-card changes.", view=None)
 
     @discord.ui.button(label="Cancel", emoji="❌", style=discord.ButtonStyle.red, row=4)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -435,8 +419,8 @@ class MissingSectionEditView(discord.ui.View):
 class MissingRemoveSectionSelect(discord.ui.Select):
     def __init__(self, pending_missing: dict[str, set[str]]):
         self.pending_missing = pending_missing
-
         available_sections = [(key, cards) for key, cards in pending_missing.items() if cards]
+
         if available_sections:
             options = [
                 discord.SelectOption(label=SECTIONS[key]["name"], value=key)
@@ -477,11 +461,7 @@ class MissingRemoveSectionPickerView(discord.ui.View):
                 section_key,
                 self.pending_missing.get(section_key, set()),
             )
-
-        await interaction.response.edit_message(
-            content="✅ Saved all missing-card removals.",
-            view=None,
-        )
+        await interaction.response.edit_message(content="✅ Saved all missing-card removals.", view=None)
 
     @discord.ui.button(label="Cancel", emoji="❌", style=discord.ButtonStyle.red, row=4)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -565,11 +545,7 @@ class MissingRemoveSectionEditView(discord.ui.View):
                 section_key,
                 self.pending_missing.get(section_key, set()),
             )
-
-        await interaction.response.edit_message(
-            content="✅ Saved all missing-card removals.",
-            view=None,
-        )
+        await interaction.response.edit_message(content="✅ Saved all missing-card removals.", view=None)
 
     @discord.ui.button(label="Cancel", emoji="❌", style=discord.ButtonStyle.red, row=4)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -614,10 +590,7 @@ class DupeAddSectionPickerView(discord.ui.View):
 
             replace_dupe_section(interaction.guild_id, interaction.user.id, section_key, merged)
 
-        await interaction.response.edit_message(
-            content="✅ Saved all duplicate additions.",
-            view=None,
-        )
+        await interaction.response.edit_message(content="✅ Saved all duplicate additions.", view=None)
 
     @discord.ui.button(label="Cancel", emoji="❌", style=discord.ButtonStyle.red, row=4)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -696,10 +669,7 @@ class DupeAddSectionView(discord.ui.View):
 
             replace_dupe_section(interaction.guild_id, interaction.user.id, section_key, merged)
 
-        await interaction.response.edit_message(
-            content="✅ Saved all duplicate additions.",
-            view=None,
-        )
+        await interaction.response.edit_message(content="✅ Saved all duplicate additions.", view=None)
 
     @discord.ui.button(label="Cancel", emoji="❌", style=discord.ButtonStyle.red, row=4)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -752,10 +722,7 @@ class DupeAddAmountView(discord.ui.View):
 
             replace_dupe_section(interaction.guild_id, interaction.user.id, section_key, merged)
 
-        await interaction.response.edit_message(
-            content="✅ Saved all duplicate additions.",
-            view=None,
-        )
+        await interaction.response.edit_message(content="✅ Saved all duplicate additions.", view=None)
 
     @discord.ui.button(label="Cancel", emoji="❌", style=discord.ButtonStyle.red, row=4)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -782,10 +749,7 @@ class DupeRemoveSectionSelect(discord.ui.Select):
                 available_sections.append(section_key)
 
         if available_sections:
-            options = [
-                discord.SelectOption(label=SECTIONS[key]["name"], value=key)
-                for key in available_sections
-            ]
+            options = [discord.SelectOption(label=SECTIONS[key]["name"], value=key) for key in available_sections]
         else:
             options = [discord.SelectOption(label="No duplicate sections available", value="__none__")]
 
@@ -830,10 +794,7 @@ class DupeRemoveSectionPickerView(discord.ui.View):
 
             replace_dupe_section(interaction.guild_id, interaction.user.id, section_key, current_map)
 
-        await interaction.response.edit_message(
-            content="✅ Saved all duplicate removals.",
-            view=None,
-        )
+        await interaction.response.edit_message(content="✅ Saved all duplicate removals.", view=None)
 
     @discord.ui.button(label="Cancel", emoji="❌", style=discord.ButtonStyle.red, row=4)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -963,10 +924,7 @@ class DupeRemoveSectionView(discord.ui.View):
 
             replace_dupe_section(interaction.guild_id, interaction.user.id, section_key, current_map)
 
-        await interaction.response.edit_message(
-            content="✅ Saved all duplicate removals.",
-            view=None,
-        )
+        await interaction.response.edit_message(content="✅ Saved all duplicate removals.", view=None)
 
     @discord.ui.button(label="Cancel", emoji="❌", style=discord.ButtonStyle.red, row=4)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -1031,10 +989,7 @@ class DupeRemoveAmountView(discord.ui.View):
 
             replace_dupe_section(interaction.guild_id, interaction.user.id, section_key, current_map)
 
-        await interaction.response.edit_message(
-            content="✅ Saved all duplicate removals.",
-            view=None,
-        )
+        await interaction.response.edit_message(content="✅ Saved all duplicate removals.", view=None)
 
     @discord.ui.button(label="Cancel", emoji="❌", style=discord.ButtonStyle.red, row=4)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -1054,7 +1009,6 @@ async def missing_add(interaction: discord.Interaction):
         section_key: set(get_missing_set(interaction.guild_id, interaction.user.id, section_key))
         for section_key in SECTIONS
     }
-
     await interaction.response.send_message(
         build_missing_summary(current_missing, "Choose a section."),
         view=MissingSectionPickerView(current_missing),
@@ -1071,10 +1025,7 @@ async def missing_remove(interaction: discord.Interaction):
     available_sections = {k: v for k, v in current_missing.items() if v}
 
     if not available_sections:
-        await interaction.response.send_message(
-            "You do not have any missing cards saved.",
-            ephemeral=True,
-        )
+        await interaction.response.send_message("You do not have any missing cards saved.", ephemeral=True)
         return
 
     await interaction.response.send_message(
@@ -1087,7 +1038,6 @@ async def missing_remove(interaction: discord.Interaction):
 @dupes_group.command(name="add", description="Add duplicate cards")
 async def dupes_add(interaction: discord.Interaction):
     pending_dupes: dict[str, dict[str, int]] = {}
-
     await interaction.response.send_message(
         build_dupe_add_summary(pending_dupes, "Choose a section."),
         view=DupeAddSectionPickerView(pending_dupes),
@@ -1104,14 +1054,10 @@ async def dupes_remove(interaction: discord.Interaction):
     available_sections = {k: v for k, v in base_dupes.items() if v}
 
     if not available_sections:
-        await interaction.response.send_message(
-            "You do not have any duplicate cards saved.",
-            ephemeral=True,
-        )
+        await interaction.response.send_message("You do not have any duplicate cards saved.", ephemeral=True)
         return
 
     removal_map: dict[str, dict[str, int]] = {}
-
     await interaction.response.send_message(
         build_dupe_remove_summary(removal_map, "Choose a section."),
         view=DupeRemoveSectionPickerView(available_sections, removal_map),
@@ -1137,21 +1083,10 @@ async def info(interaction: discord.Interaction):
     embed.add_field(
         name="Important",
         value=(
-            "You MUST add **all** your missing cards.\n"
-            "The bot calculates your owned cards as:\n"
-            "**Owned = Released cards − Missing**\n\n"
+            "You must add **all** your missing cards.\n"
+            "The bot calculates owned cards as:\n"
+            "**Owned = Released cards - Missing**\n\n"
             "If your missing list is incomplete, your collection will be wrong."
-        ),
-        inline=False,
-    )
-
-    embed.add_field(
-        name="What the bot does",
-        value=(
-            "• Save your **missing** cards\n"
-            "• Save your **duplicate** cards with amounts\n"
-            "• Show your collection with **owned**, **missing**, and **duplicates**\n"
-            "• Keep section totals accurate even if some cards are not released yet"
         ),
         inline=False,
     )
@@ -1159,13 +1094,24 @@ async def info(interaction: discord.Interaction):
     embed.add_field(
         name="Commands",
         value=(
-            "`/missing add` - edit missing cards\n"
+            "`/missing add` - edit your missing cards\n"
             "`/missing remove` - remove cards from your missing list\n"
             "`/dupes add` - add duplicate cards and amounts\n"
             "`/dupes remove` - remove duplicate cards and amounts\n"
             "`/collection` - show your collection\n"
             "`/collection user:@someone` - show someone else's collection\n"
             "`/info` - show this help message"
+        ),
+        inline=False,
+    )
+
+    embed.add_field(
+        name="What the bot shows",
+        value=(
+            "• Total owned count\n"
+            "• Missing cards\n"
+            "• Duplicate cards\n\n"
+            "It does **not** list every owned card individually."
         ),
         inline=False,
     )
@@ -1179,7 +1125,6 @@ async def info(interaction: discord.Interaction):
         inline=False,
     )
 
-    embed.set_footer(text="Use the slash commands to manage your collection.")
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
