@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
+GUILD_ID = 837986019420012554
 
 SECTIONS = {
     "evolving": {
@@ -1133,6 +1134,7 @@ async def setup_bot_commands():
         bot.tree.add_command(missing_group)
     except Exception:
         pass
+
     try:
         bot.tree.add_command(dupes_group)
     except Exception:
@@ -1142,9 +1144,13 @@ async def setup_bot_commands():
 @bot.event
 async def on_ready():
     await setup_bot_commands()
-    synced = await bot.tree.sync()
+
+    guild = discord.Object(id=GUILD_ID)
+    bot.tree.copy_global_to(guild=guild)
+    synced = await bot.tree.sync(guild=guild)
+
     print(f"Logged in as {bot.user}")
-    print(f"Synced {len(synced)} commands")
+    print(f"Synced {len(synced)} commands to guild {GUILD_ID}")
 
 
 bot.run(TOKEN)
