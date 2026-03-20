@@ -101,7 +101,7 @@ SECTIONS = {
 }
 
 if not TOKEN:
-    raise RuntimeError("TOKEN not found. Put TOKEN=your_bot_token in your .env file.")
+    raise RuntimeError("TOKEN not found. Put TOKEN=your_bot_token in Railway Variables or .env")
 
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -1066,14 +1066,14 @@ async def dupes_remove(interaction: discord.Interaction):
     )
 
 
-@bot.tree.command(name="collection", description="Show your collection or another user's collection")
+@bot.tree.command(name="collection", description="Show your collection or another user's collection", guild=discord.Object(id=GUILD_ID))
 async def collection(interaction: discord.Interaction, user: discord.Member | None = None):
     target = user or interaction.user
     embed = build_collection_embed(target, interaction.guild_id)
     await interaction.response.send_message(embed=embed)
 
 
-@bot.tree.command(name="info", description="Learn how to use the PUBG cards bot")
+@bot.tree.command(name="info", description="Learn how to use the PUBG cards bot", guild=discord.Object(id=GUILD_ID))
 async def info(interaction: discord.Interaction):
     embed = discord.Embed(
         title="ℹ️ PUBG Cards Bot Info",
@@ -1129,24 +1129,20 @@ async def info(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
-async def setup_bot_commands():
-    try:
-        bot.tree.add_command(missing_group)
-    except Exception:
-        pass
-
-    try:
-        bot.tree.add_command(dupes_group)
-    except Exception:
-        pass
-
-
 @bot.event
 async def on_ready():
-    await setup_bot_commands()
-
     guild = discord.Object(id=GUILD_ID)
-    bot.tree.copy_global_to(guild=guild)
+
+    try:
+        bot.tree.add_command(missing_group, guild=guild)
+    except Exception:
+        pass
+
+    try:
+        bot.tree.add_command(dupes_group, guild=guild)
+    except Exception:
+        pass
+
     synced = await bot.tree.sync(guild=guild)
 
     print(f"Logged in as {bot.user}")
