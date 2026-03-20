@@ -16,53 +16,28 @@ SECTIONS = {
         "name": "Evolving Universe",
         "total": 16,
         "cards": [
-            "s-rank vault",
-            "a-rank vault",
-            "b-rank vault",
-            "anniversary lucky spin",
-            "energy shield",
-            "spatial distortion zone 1",
-            "spatial distortion zone 2",
-            "floating thruster",
-            "racing hall",
-            "dynamic slide rail",
-            "parachute challenge",
-            "racing challenge",
-            "music hall",
-            "evacuation master",
-            "melody strongest team",
-            "raging rush strongest team",
+            "s-rank vault", "a-rank vault", "b-rank vault", "anniversary lucky spin",
+            "energy shield", "spatial distortion zone 1", "spatial distortion zone 2",
+            "floating thruster", "racing hall", "dynamic slide rail", "parachute challenge",
+            "racing challenge", "music hall", "evacuation master",
+            "melody strongest team", "raging rush strongest team",
         ],
     },
     "jujutsu": {
         "name": "Jujutsu Kaisen",
         "total": 11,
         "cards": [
-            "yuji itadori",
-            "megumi fushiguro",
-            "nobara kugisaki",
-            "satoru gojo",
-            "jujutsu kaisen",
-            "ryomen sukuna",
-            "suguru geto",
-            "nue",
-            "cathy",
-            "cursed corpse bear",
-            "inverted spear of heaven",
+            "yuji itadori", "megumi fushiguro", "nobara kugisaki", "satoru gojo",
+            "jujutsu kaisen", "ryomen sukuna", "suguru geto", "nue", "cathy",
+            "cursed corpse bear", "inverted spear of heaven",
         ],
     },
     "anniversary": {
         "name": "Anniversary",
         "total": 10,
         "cards": [
-            "rhythm hero",
-            "vibrant world",
-            "dino ground",
-            "ocean odyssey",
-            "immortal honor",
-            "pro collector",
-            "golden age",
-            "arcade time",
+            "rhythm hero", "vibrant world", "dino ground", "ocean odyssey",
+            "immortal honor", "pro collector", "golden age", "arcade time",
             "golden dynasty",
         ],
     },
@@ -70,22 +45,8 @@ SECTIONS = {
         "name": "2025 PMGC",
         "total": 22,
         "cards": [
-            "mad",
-            "ea",
-            "r8",
-            "kara",
-            "vpe",
-            "fl",
-            "goat",
-            "reg",
-            "dx",
-            "ae",
-            "tt",
-            "dk",
-            "drx",
-            "champion a7",
-            "2nd place ulf",
-            "3rd place apg",
+            "mad", "ea", "r8", "kara", "vpe", "fl", "goat", "reg", "dx", "ae",
+            "tt", "dk", "drx", "champion a7", "2nd place ulf", "3rd place apg",
             "bangkok thailand",
         ],
     },
@@ -93,16 +54,13 @@ SECTIONS = {
         "name": "Playful Battleground",
         "total": 11,
         "cards": [
-            "mrbeast",
-            "ray",
-            "garand",
-            "tracked amphicarrier",
+            "mrbeast", "ray", "garand", "tracked amphicarrier",
         ],
     },
 }
 
 if not TOKEN:
-    raise RuntimeError("TOKEN not found. Put TOKEN in Railway Variables or .env")
+    raise RuntimeError("TOKEN not found. Put TOKEN in Railway Variables.")
 
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -997,17 +955,8 @@ class DupeRemoveAmountView(discord.ui.View):
         )
 
 
-missing_group = app_commands.Group(
-    name="missing",
-    description="Manage your missing cards",
-    guild_ids=[GUILD_ID],
-)
-
-dupes_group = app_commands.Group(
-    name="dupes",
-    description="Manage your duplicate cards",
-    guild_ids=[GUILD_ID],
-)
+missing_group = app_commands.Group(name="missing", description="Manage your missing cards")
+dupes_group = app_commands.Group(name="dupes", description="Manage your duplicate cards")
 
 
 @missing_group.command(name="add", description="Add missing cards")
@@ -1072,22 +1021,14 @@ async def dupes_remove(interaction: discord.Interaction):
     )
 
 
-@bot.tree.command(
-    name="collection",
-    description="Show your collection or another user's collection",
-    guild=GUILD_OBJECT,
-)
+@bot.tree.command(name="collection", description="Show your collection or another user's collection")
 async def collection(interaction: discord.Interaction, user: discord.Member | None = None):
     target = user or interaction.user
     embed = build_collection_embed(target, interaction.guild_id)
     await interaction.response.send_message(embed=embed)
 
 
-@bot.tree.command(
-    name="info",
-    description="Learn how to use the PUBG cards bot",
-    guild=GUILD_OBJECT,
-)
+@bot.tree.command(name="info", description="Learn how to use the PUBG cards bot")
 async def info(interaction: discord.Interaction):
     embed = discord.Embed(
         title="ℹ️ PUBG Cards Bot Info",
@@ -1145,7 +1086,30 @@ async def info(interaction: discord.Interaction):
 
 @bot.event
 async def on_ready():
+    bot.tree.clear_commands(guild=GUILD_OBJECT)
+
+    try:
+        bot.tree.add_command(missing_group, guild=GUILD_OBJECT)
+    except Exception:
+        pass
+
+    try:
+        bot.tree.add_command(dupes_group, guild=GUILD_OBJECT)
+    except Exception:
+        pass
+
+    try:
+        bot.tree.add_command(collection, guild=GUILD_OBJECT)
+    except Exception:
+        pass
+
+    try:
+        bot.tree.add_command(info, guild=GUILD_OBJECT)
+    except Exception:
+        pass
+
     synced = await bot.tree.sync(guild=GUILD_OBJECT)
+
     print(f"Logged in as {bot.user}")
     print(f"Synced {len(synced)} commands to guild {GUILD_ID}")
 
