@@ -1133,8 +1133,6 @@ async def info(interaction: discord.Interaction):
 async def on_ready():
     guild = discord.Object(id=GUILD_ID)
 
-    bot.tree.clear_commands(guild=guild)	
-
     try:
         bot.tree.add_command(missing_group, guild=guild)
     except Exception:
