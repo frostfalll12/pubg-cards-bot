@@ -1086,6 +1086,7 @@ async def info(interaction: discord.Interaction):
 
 @bot.event
 async def on_ready():
+    bot.tree.clear_commands(guild=None)  # Clear global commands to avoid duplicates
     bot.tree.clear_commands(guild=GUILD_OBJECT)
 
     try:
@@ -1108,6 +1109,7 @@ async def on_ready():
     except Exception:
         pass
 
+    await bot.tree.sync()  # Sync global clear (removes duplicate global commands)
     synced = await bot.tree.sync(guild=GUILD_OBJECT)
 
     print(f"Logged in as {bot.user}")
